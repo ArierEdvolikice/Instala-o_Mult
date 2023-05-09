@@ -1,0 +1,192 @@
+import processing.serial.*;
+Serial arduinoPort;
+
+PImage dinoImg, cactusImg, birdImg;
+Dino dino;
+ArrayList<Obstacle> obstacles;
+int score = 0;
+float spacing;
+int frameCountOffset = (int) random(60);
+int dinoY;
+
+void setup() {
+  
+  arduinoPort = new Serial(this, Serial.list()[1], 9600);
+  size(600, 600);
+  
+  //imagens
+  dinoImg = loadImage("dino.png");
+  cactusImg = loadImage("cactus.png");
+  birdImg = loadImage("bird.png");
+  dinoImg.resize(40, 40);
+  cactusImg.resize(40, 40);
+  birdImg.resize(40, 40);
+  
+  //dino
+  dino = new Dino(width/4, height/2, dinoImg.width/2, dinoImg.height/2);
+  
+  //obstáculos
+  obstacles = new ArrayList<Obstacle>();
+  for (int i = 0; i < 3; i++) {
+  float spacing = random(200, 1000);
+  Obstacle o = new Obstacle(width + i*spacing, height/2, cactusImg.width/2, cactusImg.height/2, cactusImg);
+  obstacles.add(o);
+  
+}
+  background(255);
+}
+
+void draw() {
+  background(255);
+  
+  dino.update();
+  dino.display(dinoImg);
+    if (frameCount % 60 == frameCountOffset) {
+    spacing = random(100, 800);
+  }
+  
+  //colisão e pontuação
+  for (int i = obstacles.size()-1; i >= 0; i--) {
+    Obstacle o = obstacles.get(i);
+    o.update();
+    o.display();
+    if (dino.collidesWith(o)) {
+      gameOver();
+    }
+    if (o.offscreen()) {
+      obstacles.remove(o);
+      score++;
+      Obstacle newO = new Obstacle(width, height/2, cactusImg.width/2, cactusImg.height/2, cactusImg);
+      obstacles.add(newO);
+    }
+  }
+  
+  //score
+  textSize(32);
+  textAlign(LEFT);
+  fill(0);
+  text("Score: " + score, 450, 40);
+  
+  
+   while (arduinoPort.available() > 0) {
+    // Lê a mensagem
+    String message = arduinoPort.readStringUntil('\n');
+    
+    // Processa a mensagem
+    if (message != null) {
+      message = message.trim();
+      if (message.equals("BUTTON_PRESSED")) {
+        // Ação a ser executada quando o botão é pressionado
+         dinoY -=50;
+        println("vivo");
+      }
+    }
+}
+
+  
+}
+
+void keyPressed() {
+  if (key == ' ' && !dino.isJumping()) {
+    dino.jump();
+  }
+}
+
+//game over
+void gameOver() {
+  noLoop();
+  textSize(64);
+  textAlign(CENTER);
+  fill(255, 0, 0);
+  text("Game Over", width/2, height/2);
+}
+
+//dino
+class Dino {
+  float x, dinoY, w, h;
+  float yVel = 0;
+  float gravity = 0.8;
+  boolean jumping = false;
+  
+  Dino(float x, float dinoY, float w, float h) {
+    this.x = x;
+    this.dinoY = dinoY;
+    this.w = w;
+    this.h = h;
+  }
+  
+  void jump() {
+    yVel = -15;
+    jumping = true;
+  }
+  
+  void update() {
+    yVel += gravity;
+    dinoY += yVel;
+    if (dinoY >= height/2) {
+      dinoY = height/2;
+      yVel = 0;
+      jumping = false;
+    }
+  }
+  
+  
+  //imagem dino
+  void display(PImage img) {
+    image(img, x, dinoY-h, w, h);
+  }
+  
+  //colisão
+  boolean collidesWith(Obstacle o) {
+    float dinoRight = x + w;
+    float dinoBottom = dinoY;
+    float dinoLeft = x;
+    float dinoTop = dinoY - h;    
+    float obsRight = o.x + o.w;
+    float obsBottom = o.y;
+    float obsLeft = o.x;
+    float obsTop = o.y - o.h;
+    
+    if (dinoRight > obsLeft && dinoLeft < obsRight && dinoBottom > obsTop && dinoTop < obsBottom) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+  
+  boolean isJumping() {
+    return jumping;
+  }
+}
+
+//obstáculos
+class Obstacle {
+  float x, y, w, h;
+  float speed = -5;
+  PImage img;
+  
+  Obstacle(float x, float y, float w, float h, PImage img) {
+    this.x = x;
+    this.y = y;
+    this.w = w;
+    this.h = h;
+    this.img = img;
+  }
+  
+  void update() {
+    x += speed;
+  }
+  
+  //imagem cactos
+  void display() {
+    image(img, x, y-h, w, h);
+  }
+  
+  boolean offscreen() {
+    if (x + w < 0) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+}
