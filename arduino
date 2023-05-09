@@ -1,0 +1,40 @@
+const int buttonPin = 2;
+const int ledPin = 13;
+int buttonState = 0;
+int mensagem = 0;
+//Define as posições dos pinos no arduino
+
+void setup() {
+  pinMode(buttonPin, INPUT);
+  pinMode(ledPin, OUTPUT);
+  
+  Serial.begin(9600);
+  //abre a porta de comunicação
+}
+
+void loop() {
+  // Lê o estado do botão
+  buttonState = digitalRead(buttonPin);
+
+  mensagem = int(digitalRead(buttonPin));
+    if(digitalRead(buttonPin)==1){
+      digitalWrite(ledPin,1);
+      Serial.println(mensagem);
+      delay(50);
+    }else{
+      digitalWrite(ledPin, 0);
+      Serial.println(mensagem);
+      delay(50);
+    }
+  
+  // Se o botão está pressionado, envia uma mensagem pela porta serial
+  //if (buttonState == HIGH) {
+    //Serial.println('1');
+    //digitalWrite(ledPin, HIGH);
+    //envia o estado do botão para a porta 
+  //} else {
+    //digitalWrite(ledPin, LOW);
+  //}
+  
+  //delay(50);
+}
